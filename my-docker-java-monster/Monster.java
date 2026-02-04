@@ -3,7 +3,7 @@ public class Monster {
     private String type;
     private String description;
 
-    public void Monster(String name, String type){
+    public Monster(String name, String type){
         this.name = name;
         this.type = type;
     }
