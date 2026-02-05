@@ -1,1 +1,3 @@
-/my-docker-java-monster/.idea/
+.idea/
+*.iml
+out/
