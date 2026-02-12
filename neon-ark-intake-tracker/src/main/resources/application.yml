@@ -1,0 +1,21 @@
+spring: # Root Spring config
+  application: # App identity section
+    name: neon-ark-intake-tracker # Name shown in logs/metrics
+
+  datasource: # Database connection settings
+    url: jdbc:postgresql://localhost:5437/intake_tracker # Must match Docker host port + DB name
+    driver-class-name: org.postgresql.Driver # PostgreSQL JDBC driver
+    username: neonark # POSTGRES_USER from docker-compose
+    password: neonarkpass # POSTGRES_PASSWORD from docker-compose
+
+  flyway: # Database migrations
+    enabled: true # Turn migrations on
+    locations: classpath:db/migration # Where migration files live
+
+  jpa: # ORM behavior (Hibernate)
+    generate-ddl: false # Do not auto-create tables
+    hibernate: # Hibernate-specific settings
+      ddl-auto: none # Let Flyway control schema
+
+server: # Web server settings
+  port: 8080 # Default is often 8080
