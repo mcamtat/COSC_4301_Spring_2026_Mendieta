@@ -23,6 +23,7 @@ public class CreatureService {
     private final CreatureRepository repository;
 
     public CreatureService(CreatureRepository repository) {
+
         this.repository = repository;
     }
 
@@ -48,9 +49,6 @@ public class CreatureService {
         creature.setDangerLevel(req.dangerLevel());
         creature.setCondition(req.condition());
         creature.setCreatedAt(LocalDateTime.now());
-
-        // ⚠️ Habitat handling is skipped for now
-        // (You will need to handle it properly later)
 
         // 2. Save entity
         Creature saved = repository.save(creature);
