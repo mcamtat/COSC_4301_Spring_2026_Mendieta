@@ -62,6 +62,19 @@ public class CreatureController {
         return ResponseEntity.status(201).body(created);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Long> deleteCreature(@PathVariable Long id) {
 
+        // Check if the creature exists
+        if (!service.existsById(id)) {
+            return ResponseEntity.notFound().build(); // 404 if not found
+        }
+
+        // Delete the creature
+        service.deleteCreature(id);
+
+        // Return 200 OK with the deleted ID
+        return ResponseEntity.ok().body(id);
+    }
 
 }
