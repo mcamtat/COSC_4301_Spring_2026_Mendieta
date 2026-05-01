@@ -1,3 +1,4 @@
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.BufferedReader;
@@ -50,7 +51,7 @@ public class WardenService {
     public static boolean checkDuplicate(List<Warden> wardens, String identifier){
 
         for(Warden warden : wardens){
-            if(warden.getIdentifierValue().equals(identifier)){
+            if(warden.getIdentifierValue().equalsIgnoreCase(identifier)){
                 return true;
             }
         }
@@ -58,7 +59,24 @@ public class WardenService {
         return false;
     }
 
-    /* Check */
+    /* Check if an entry is empty */
+    public static boolean checkNotBlank(String entry){
+
+        return entry!= null && !entry.trim().isEmpty();
+    }
+
+    /* Check if the date is valid */
+    public static boolean checkValidDate(String date){
+
+        try{
+            LocalDate.parse(date);
+            return true;
+        } catch(Exception e){
+            return false;
+        }
+    }
+
+    /* Check if  */
 
     /* Display all the wardens */
     public static void displayWardens(List<Warden> wardens){
@@ -112,7 +130,7 @@ public class WardenService {
                 row[i] = Objects.requireNonNullElse(value, "");
             }
 
-            System.out.printf(format, (Object) row);
+            System.out.printf(format, (Object[]) row);
 
         }
     }
