@@ -36,6 +36,7 @@ public class App {
                     simulateCertificationManagement();
                     break;
                 case "5":
+                    simulateDeactivate();
                     break;
                 case "6":
                     running = false;
@@ -190,7 +191,7 @@ public class App {
 
         System.out.println("Action: Update an existing warden's record.");
 
-        System.out.println("\nInputs required: warden ID, Field to update (last name, email, " +
+        System.out.println("\nInputs required: Warden ID, Field to update (last name, email, " +
                            "end date, role, clearance, employment status), New status");
 
         System.out.println("\nValidation check: Warden ID must exist, New values must " +
@@ -206,13 +207,54 @@ public class App {
         System.out.println("  \"employmentId\": <new value>");
         System.out.println("}");
         System.out.println("\nRESULT: SUCCESS (simulated)");
+        System.out.println("\nReturning to Main Menu...");
     }
 
     public static void simulateCertificationManagement(){
         System.out.println("        MANAGE CERTIFICATIONS");
         System.out.println("======================================");
 
-        System.out.println("Action: Update an existing warden's record.");
+        System.out.println("Action: Manage a specific warden's certifications.");
+
+        System.out.println("\nInputs required: Warden ID, Certification action (Add, View, Mark expired, Remove), Date (optional)");
+
+        System.out.println("\nValidation check: Warden ID must exist, Certification must exist, Date must be valid");
+
+        System.out.println("\nWOULD SEND:  POST   /api/wardens/{id}/certifications");
+
+        System.out.println("Brief Description: Create or manage a certification associated with an existing warden.");
+
+        System.out.println("\nPAYLOAD (JSON):");
+        System.out.println("{");
+        System.out.println("  \"name\": \"Certification Name\",");
+        System.out.println("  \"dateEarned\": \"YYYY-MM-DD\",");
+        System.out.println("  \"expirationDate\": \"YYYY-MM-DD\"");
+        System.out.println("}");
+        System.out.println("\nRESULT: SUCCESS (simulated)");
+        System.out.println("\nReturning to Main Menu...");
+    }
+
+    public static void simulateDeactivate(){
+        System.out.println("        DEACTIVATE / TERMINATE WARDEN");
+        System.out.println("==========================================");
+
+        System.out.println("Action: Deactivate or terminate a warden.");
+
+        System.out.println("\nInputs required: Warden ID, New employment status, End date (optional)");
+
+        System.out.println("\nValidation check: Warden ID must exist, Employment status must exist, Date must be valid");
+
+        System.out.println("\nWOULD SEND:  PATCH   /api/wardens/{id}/status");
+
+        System.out.println("Brief Description: Update the employment status of a warden or mark them as terminated.");
+
+        System.out.println("\nPAYLOAD (JSON):");
+        System.out.println("{");
+        System.out.println("  \"employmentId\": <new status>,");
+        System.out.println("  \"endDate\": \"YYYY-MM-DD\"");
+        System.out.println("}");
+        System.out.println("\nRESULT: SUCCESS (simulated)");
+        System.out.println("\nReturning to Main Menu...");
     }
 
 }
