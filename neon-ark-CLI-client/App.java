@@ -49,7 +49,7 @@ public class App {
 
     public static void printMainMenu(){
         System.out.println("=========================================================");
-        System.out.println("        NEON ARK — ADMIN WARDEN ONBOARDING CONSOLE");
+        System.out.println("        NEON ARK - ADMIN WARDEN ONBOARDING CONSOLE");
         System.out.println("=========================================================");
         System.out.println("\n[ MAIN MENU ]");
         System.out.println("1. Add New Warden");
@@ -181,8 +181,8 @@ public class App {
         System.out.println("  \"clearanceId\": " + clearanceId + ",");
         System.out.println("  \"identifierTypeId\": " + identifierTypeId);
         System.out.println("}");
-
         System.out.println("RESULT: SUCCESS (simulated)");
+        System.out.println("\nReturning to Main Menu...");
     }
 
     public static void simulateUpdate(){
@@ -192,7 +192,7 @@ public class App {
         System.out.println("Action: Update an existing warden's record.");
 
         System.out.println("\nInputs required: Warden ID, Field to update (last name, email, " +
-                           "end date, role, clearance, employment status), New status");
+                           "end date, role, clearance, employment status), New value");
 
         System.out.println("\nValidation check: Warden ID must exist, New values must " +
                            "follow their respective field's validation checks.");
@@ -216,7 +216,8 @@ public class App {
 
         System.out.println("Action: Manage a specific warden's certifications.");
 
-        System.out.println("\nInputs required: Warden ID, Certification action (Add, View, Mark expired, Remove), Date (optional)");
+        System.out.println("\nInputs required: Warden ID, Certification action (Add, View, Mark expired, Remove), " +
+                           "Date earned (optional), Date expired (optional)");
 
         System.out.println("\nValidation check: Warden ID must exist, Certification must exist, Date must be valid");
 
