@@ -96,10 +96,10 @@ public class WardenService {
                 Warden::getEmail,
                 Warden::getStartingDate,
                 Warden::getEndDate,
-                w -> String.valueOf(w.getEmploymentId()),
-                w -> String.valueOf(w.getRoleId()),
-                w -> String.valueOf(w.getClearanceId()),
-                w -> String.valueOf(w.getIdentifierTypeId())
+                w -> getEmploymentStatus(w.getEmploymentId()),
+                w -> getRoleName(w.getRoleId()),
+                w -> getClearanceLevel(w.getClearanceId()),
+                w -> getIdentifierType(w.getIdentifierTypeId())
         );
 
         int[] widths = new int[headers.length];
@@ -154,5 +154,45 @@ public class WardenService {
 
         return max;
     }
+
+    public static String getRoleName(int roleId) {
+        switch(roleId) {
+            case 1: return "Admin";
+            case 2: return "Field";
+            case 3: return "Rift";
+            case 4: return "Trainer";
+            case 5: return "Astral";
+            default: return "Unknown";
+        }
+    }
+
+    public static String getEmploymentStatus(int id) {
+        switch(id) {
+            case 1: return "Active";
+            case 2: return "On Leave";
+            case 3: return "Terminated";
+            default: return "Unknown";
+        }
+    }
+
+    public static String getClearanceLevel(int id) {
+        switch(id) {
+            case 1: return "Alpha";
+            case 2: return "Omega";
+            case 3: return "Eclipse";
+            default: return "Unknown";
+        }
+    }
+
+    public static String getIdentifierType(int id) {
+        switch(id) {
+            case 1: return "Badge";
+            case 2: return "Passport";
+            case 3: return "Visa";
+            default: return "Unknown";
+        }
+    }
+
+
 
 }
