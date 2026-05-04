@@ -39,7 +39,7 @@ public class CreatureService {
      */
     public List<Creature> getAllCreatures() {
 
-        return repository.findAll();
+        return repository.findByStatusNot("REMOVED");
     }
 
     // NEW: Return one creature by id (Optional = may not exist)
@@ -82,7 +82,11 @@ public class CreatureService {
     }
 
     public void deleteCreature(Long id) {
-        repository.deleteById(id);
+        Creature creature = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Creature not found"));
+
+        creature.setStatus("REMOVED");
+        repository.save(creature);
     }
 
 
