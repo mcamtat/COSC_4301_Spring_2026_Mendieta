@@ -89,6 +89,21 @@ public class CreatureService {
         repository.save(creature);
     }
 
+    public Creature renameCreature(Long id, String newName) {
 
+        if (newName == null || newName.trim().isEmpty()) {
+            throw new RuntimeException("BAD_REQUEST");
+        }
+
+        if (repository.existsByNameIgnoreCase(newName)) {
+            throw new RuntimeException("DUPLICATE_NAME");
+        }
+
+        Creature creature = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
+
+        creature.setName(newName);
+        return repository.save(creature);
+    }
 
 }
