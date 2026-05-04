@@ -33,6 +33,9 @@ public class Creature {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(nullable = false, length = 20)
+    private String status;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "habitat_id", nullable = false)
     @JsonBackReference
