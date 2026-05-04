@@ -4,9 +4,13 @@ import org.example.neonarkintaketracker.entity.Creature;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 // Simple CRUD + paging/sorting out of the box
 @Repository
 public interface CreatureRepository extends JpaRepository<Creature, Long> {
+
+    List<Creature> findByStatusNot(String status);
 
     // No extra methods needed for basic "read" functionality
 
