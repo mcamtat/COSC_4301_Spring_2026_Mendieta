@@ -1,6 +1,8 @@
 package org.example.neonarkintaketracker.controller;
 
 import org.example.neonarkintaketracker.entity.Creature;
+import org.example.neonarkintaketracker.entity.FeedingSchedule;
+import org.example.neonarkintaketracker.entity.Observation;
 import org.example.neonarkintaketracker.service.CreatureService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +13,7 @@ import org.example.neonarkintaketracker.dto.CreatureResponse;
 import jakarta.validation.Valid;
 
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -140,4 +143,104 @@ public class CreatureController {
         }
     }
 
+    @GetMapping("/{id}/observations")
+    public ResponseEntity<?> getObservations(@PathVariable Long id) {
+
+        try {
+            List<Observation> observations = service.getObservations(id);
+            return ResponseEntity.ok(observations);
+
+        } catch (RuntimeException e) {
+
+            if ("NOT_FOUND".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Creature not found");
+            }
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/{id}/observations")
+    public ResponseEntity<?> addObservation(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+
+        try {
+            Observation saved = service.addObservation(id, body.get("note"));
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+
+        } catch (RuntimeException e) {
+
+            return switch (e.getMessage()) {
+                case "NOT_FOUND" -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Creature not found");
+
+                case "CONFLICT_REMOVED" -> ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("Cannot add observation to removed creature");
+
+                case "BAD_REQUEST" -> ResponseEntity.badRequest()
+                        .body("Invalid note");
+
+                default -> ResponseEntity.internalServerError().build();
+            };
+        }
+    }
+
+    @GetMapping("/{id}/feeding-schedule")
+    public ResponseEntity<?> getFeedingSchedule(@PathVariable Long id) {
+
+        try {
+            return ResponseEntity.ok(service.getFeedingSchedule(id));
+
+        } catch (RuntimeException e) {
+
+            if ("NOT_FOUND".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Creature not found");
+            }
+
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/{id}/feeding-schedule")
+    public ResponseEntity<?> addFeeding(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+
+        LocalDateTime time;
+
+        try {
+            time = LocalDateTime.parse(body.get("feedTime"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body("Invalid feed time format (YYYY-MM-DDTHH:MM:SS)");
+        }
+
+        try {
+            FeedingSchedule saved = service.addFeeding(
+                    id,
+                    time,
+                    body.get("notes")
+            );
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+
+        } catch (RuntimeException e) {
+
+            return switch (e.getMessage()) {
+                case "NOT_FOUND" -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Creature not found");
+
+                case "CONFLICT_REMOVED" -> ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("Cannot add feeding to removed creature");
+
+                case "BAD_REQUEST" -> ResponseEntity.badRequest()
+                        .body("Invalid input");
+
+                default -> ResponseEntity.internalServerError().build();
+            };
+        }
+    }
 }

@@ -1,8 +1,14 @@
 package org.example.neonarkintaketracker.service;
 
+import org.example.neonarkintaketracker.dto.UserResponse;
 import org.example.neonarkintaketracker.entity.Creature;
+import org.example.neonarkintaketracker.entity.FeedingSchedule;
 import org.example.neonarkintaketracker.entity.Habitat;
+import org.example.neonarkintaketracker.entity.Observation;
 import org.example.neonarkintaketracker.repository.CreatureRepository;
+import org.example.neonarkintaketracker.repository.FeedingScheduleRepository;
+import org.example.neonarkintaketracker.repository.ObservationRepository;
+import org.example.neonarkintaketracker.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import jakarta.persistence.EntityManager;
@@ -24,13 +30,19 @@ import java.util.Optional;
 public class CreatureService {
 
     private final CreatureRepository repository;
+    private final ObservationRepository observationRepository;
+    private final FeedingScheduleRepository feedingRepository;
+    private final UserRepository userRepository;
 
     @PersistenceContext
     private EntityManager em;
 
-    public CreatureService(CreatureRepository repository) {
+    public CreatureService(CreatureRepository repository, ObservationRepository observationRepository, FeedingScheduleRepository feedingRepository, UserRepository userRepository) {
 
         this.repository = repository;
+        this.observationRepository = observationRepository;
+        this.feedingRepository = feedingRepository;
+        this.userRepository = userRepository;
     }
 
     /*
@@ -94,6 +106,14 @@ public class CreatureService {
         Creature creature = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
 
+        if ("REMOVED".equals(creature.getStatus())) {
+            throw new RuntimeException("NOT_FOUND");
+        }
+
+        if (feedingRepository.existsByCreatureIdAndFeedTimeAfter(id, LocalDateTime.now())) {
+            throw new RuntimeException("ACTIVE_FEEDING_SCHEDULE");
+        }
+
         creature.setStatus("REMOVED");
         repository.save(creature);
     }
@@ -115,4 +135,96 @@ public class CreatureService {
             return repository.save(creature);
         }
 
+
+    public List<Observation> getObservations(Long creatureId) {
+
+        Creature creature = repository.findById(creatureId)
+                .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
+
+        if ("REMOVED".equals(creature.getStatus())) {
+            throw new RuntimeException("NOT_FOUND");
+        }
+
+        return observationRepository.findByCreatureId(creatureId);
+    }
+
+    public Observation addObservation(Long creatureId, String note) {
+
+        Creature creature = repository.findById(creatureId)
+                .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
+
+        if ("REMOVED".equals(creature.getStatus())) {
+            throw new RuntimeException("CONFLICT_REMOVED");
+        }
+
+        if (note == null || note.trim().isEmpty()) {
+            throw new RuntimeException("BAD_REQUEST");
+        }
+
+        Observation obs = new Observation();
+        obs.setNote(note);
+        obs.setObservedAt(LocalDateTime.now());
+        obs.setCreature(creature);
+
+        return observationRepository.save(obs);
+    }
+
+    public List<FeedingSchedule> getFeedingSchedule(Long creatureId) {
+
+        Creature creature = repository.findById(creatureId)
+                .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
+
+        if ("REMOVED".equals(creature.getStatus())) {
+            throw new RuntimeException("NOT_FOUND");
+        }
+
+        return feedingRepository.findByCreatureId(creatureId);
+    }
+
+    public FeedingSchedule addFeeding(Long creatureId, LocalDateTime feedTime, String notes) {
+
+        Creature creature = repository.findById(creatureId)
+                .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
+
+        if ("REMOVED".equals(creature.getStatus())) {
+            throw new RuntimeException("CONFLICT_REMOVED");
+        }
+
+        if (feedTime == null) {
+            throw new RuntimeException("BAD_REQUEST");
+        }
+
+        FeedingSchedule fs = new FeedingSchedule();
+        fs.setFeedTime(feedTime);
+        fs.setNotes(notes);
+        fs.setCreature(creature);
+
+        return feedingRepository.save(fs);
+    }
+
+    public List<Creature> findCreaturesToFeed(String time) {
+
+        if (time == null || !time.matches("^\\d{2}:\\d{2}$")) {
+            throw new RuntimeException("BAD_REQUEST");
+        }
+
+        List<FeedingSchedule> schedules = feedingRepository.findByFeedTimeString(time);
+
+        return schedules.stream()
+                .map(FeedingSchedule::getCreature)
+                .filter(c -> !"REMOVED".equals(c.getStatus()))
+                .toList();
+    }
+
+    public List<UserResponse> getAllUsers() {
+
+        return userRepository.findAll().stream()
+                .map(u -> new UserResponse(
+                        u.getFullName(),
+                        u.getEmail(),
+                        u.getPhone(),
+                        u.getRole().getName()
+                ))
+                .toList();
+    }
 }
