@@ -95,15 +95,15 @@ public class CreatureService {
             throw new RuntimeException("BAD_REQUEST");
         }
 
-        if (repository.existsByNameIgnoreCase(newName)) {
-            throw new RuntimeException("DUPLICATE_NAME");
-        }
-
         Creature creature = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
 
-        creature.setName(newName);
-        return repository.save(creature);
-    }
+        if (repository.existsByNameIgnoreCase(newName) && !creature.getName().equalsIgnoreCase(newName)) {
+            throw new RuntimeException("DUPLICATE_NAME");
+        }
+
+            creature.setName(newName);
+            return repository.save(creature);
+        }
 
 }
