@@ -8,7 +8,6 @@ import org.example.neonarkintaketracker.entity.Observation;
 import org.example.neonarkintaketracker.repository.CreatureRepository;
 import org.example.neonarkintaketracker.repository.FeedingScheduleRepository;
 import org.example.neonarkintaketracker.repository.ObservationRepository;
-import org.example.neonarkintaketracker.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import jakarta.persistence.EntityManager;
@@ -32,17 +31,15 @@ public class CreatureService {
     private final CreatureRepository repository;
     private final ObservationRepository observationRepository;
     private final FeedingScheduleRepository feedingRepository;
-    private final UserRepository userRepository;
 
     @PersistenceContext
     private EntityManager em;
 
-    public CreatureService(CreatureRepository repository, ObservationRepository observationRepository, FeedingScheduleRepository feedingRepository, UserRepository userRepository) {
+    public CreatureService(CreatureRepository repository, ObservationRepository observationRepository, FeedingScheduleRepository feedingRepository) {
 
         this.repository = repository;
         this.observationRepository = observationRepository;
         this.feedingRepository = feedingRepository;
-        this.userRepository = userRepository;
     }
 
     /*
@@ -84,6 +81,16 @@ public class CreatureService {
         creature.setNotes(req.notes());
 
         creature.setHabitat(habitat);
+
+        creature.setStatus("ACTIVE");
+
+        if (!List.of("LOW","MEDIUM","HIGH").contains(req.dangerLevel())) {
+            throw new RuntimeException("BAD_REQUEST");
+        }
+
+        if (!List.of("STABLE","QUARANTINED","CRITICAL").contains(req.condition())) {
+            throw new RuntimeException("BAD_REQUEST");
+        }
 
         // 2. Save entity
         Creature saved = repository.save(creature);
@@ -127,7 +134,11 @@ public class CreatureService {
         Creature creature = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
 
-        if (repository.existsByNameIgnoreCaseAndHabitatId(newName, creature.getHabitat().getId()) && !creature.getName().equalsIgnoreCase(newName)){
+        if (repository.existsByNameIgnoreCaseAndHabitatIdAndIdNot(
+                newName,
+                creature.getHabitat().getId(),
+                creature.getId()
+        )) {
             throw new RuntimeException("DUPLICATE_NAME");
         }
 
@@ -216,15 +227,4 @@ public class CreatureService {
                 .toList();
     }
 
-    public List<UserResponse> getAllUsers() {
-
-        return userRepository.findAll().stream()
-                .map(u -> new UserResponse(
-                        u.getFullName(),
-                        u.getEmail(),
-                        u.getPhone(),
-                        u.getRole().getName()
-                ))
-                .toList();
-    }
 }
