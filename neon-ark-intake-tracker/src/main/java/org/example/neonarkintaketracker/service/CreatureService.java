@@ -50,6 +50,18 @@ public class CreatureService {
 
     public CreatureResponse createCreature(CreatureRequest req) {
 
+        if (req.name() == null || req.name().trim().isEmpty()) {
+            throw new RuntimeException("BAD_REQUEST");
+        }
+
+        if (repository.existsByNameIgnoreCaseAndHabitatId(req.name(), req.habitatId())) {
+            throw new RuntimeException("DUPLICATE_CREATURE");
+        }
+
+        Habitat habitat = em.find(Habitat.class, req.habitatId());
+        if (habitat == null) {
+            throw new RuntimeException("BAD_REQUEST");
+        }
         // 1. Map DTO -> Entity
         Creature creature = new Creature();
         creature.setName(req.name());
@@ -59,7 +71,7 @@ public class CreatureService {
         creature.setCreatedAt(LocalDateTime.now());
         creature.setNotes(req.notes());
 
-        creature.setHabitat(em.getReference(Habitat.class, req.habitatId()));
+        creature.setHabitat(habitat);
 
         // 2. Save entity
         Creature saved = repository.save(creature);
@@ -71,19 +83,16 @@ public class CreatureService {
                 saved.getSpecies(),
                 saved.getDangerLevel(),
                 saved.getCondition(),
-                saved.getNotes(),                      // add this
-                saved.getHabitat().getId(),           // add this
+                saved.getNotes(),
+                saved.getHabitat().getId(),
                 saved.getCreatedAt().toString()
         );
     }
 
-    public boolean existsById(Long id) {
-        return repository.existsById(id);
-    }
 
     public void deleteCreature(Long id) {
         Creature creature = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Creature not found"));
+                .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
 
         creature.setStatus("REMOVED");
         repository.save(creature);
@@ -98,7 +107,7 @@ public class CreatureService {
         Creature creature = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
 
-        if (repository.existsByNameIgnoreCase(newName) && !creature.getName().equalsIgnoreCase(newName)) {
+        if (repository.existsByNameIgnoreCaseAndHabitatId(newName, creature.getHabitat().getId()) && !creature.getName().equalsIgnoreCase(newName)){
             throw new RuntimeException("DUPLICATE_NAME");
         }
 
