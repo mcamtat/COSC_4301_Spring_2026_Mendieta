@@ -107,12 +107,14 @@ public class NeonArkCli {
         try {
             ObjectMapper mapper = new ObjectMapper();
 
+
             return Arrays.asList(
                     mapper.readValue(json, CreatureResponse[].class)
             );
 
         } catch (Exception e) {
             System.out.println("Failed to parse response.");
+            e.printStackTrace();
             return List.of();
         }
     }
@@ -128,7 +130,7 @@ public class NeonArkCli {
         String format = "%-5s %-20s %-15s %-10s %-15s\n";
 
         System.out.printf(format, "ID", "Name", "Species", "Danger", "Condition");
-        System.out.println("-------------------------------------------------------------");
+        System.out.println("----------------------------------------------------------------");
 
         for (CreatureResponse creature : creatures) {
             System.out.printf(format,
@@ -141,13 +143,196 @@ public class NeonArkCli {
         }
     }
 
+
     private void viewById() {
 
+        Long id = null;
+
+        while (id == null) {
+            System.out.print("Enter creature ID: ");
+            String input = scanner.nextLine();
+
+            try {
+                id = Long.parseLong(input);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a numeric ID.");
+            }
+        }
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_BASE + "/creatures/" + id))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            int status = response.statusCode();
+            System.out.println("\nStatus: " + status);
+
+            if (status == 200) {
+                CreatureResponse creature = parseSingle(response.body());
+                displaySingleCreature(creature);
+
+            } else if (status == 404) {
+                System.out.println("Creature not found.");
+
+            } else {
+                System.out.println("Error: " + response.body());
+            }
+
+        } catch (Exception e) {
+            System.out.println("Connection error: " + e.getMessage());
+        }
+    }
+
+
+    private CreatureResponse parseSingle(String json) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(json, CreatureResponse.class);
+
+        } catch (Exception e) {
+            System.out.println("Failed to parse response.");
+            return null;
+        }
+    }
+
+    private void displaySingleCreature(CreatureResponse creature) {
+
+        if (creature == null) {
+            System.out.println("No data to display.");
+            return;
+        }
+
+        System.out.println("\n===== CREATURE DETAILS =====");
+        System.out.println("ID: " + creature.id());
+        System.out.println("Name: " + creature.name());
+        System.out.println("Species: " + creature.species());
+        System.out.println("Danger Level: " + creature.dangerLevel());
+        System.out.println("Condition: " + creature.condition());
+        System.out.println("Notes: " + (creature.notes() != null ? creature.notes() : ""));
+        System.out.println("============================\n");
     }
 
 
     private void register() {
 
+        String name;
+        while (true) {
+            System.out.print("Enter name: ");
+            name = scanner.nextLine();
+            if (!name.isBlank()) break;
+            System.out.println("Name cannot be blank.");
+        }
+
+        String species;
+        while (true) {
+            System.out.print("Enter species: ");
+            species = scanner.nextLine();
+            if (!species.isBlank()) break;
+            System.out.println("Species cannot be blank.");
+        }
+
+        String danger;
+        while (true) {
+            System.out.print("Enter danger level (LOW, MEDIUM, HIGH): ");
+            danger = scanner.nextLine().toUpperCase();
+
+            if (danger.equals("LOW") || danger.equals("MEDIUM") || danger.equals("HIGH")) {
+                break;
+            }
+
+            System.out.println("Invalid danger level. Must be LOW, MEDIUM, or HIGH.");
+        }
+
+        String condition;
+        while (true) {
+            System.out.print("Enter condition (STABLE, QUARANTINED, CRITICAL): ");
+            condition = scanner.nextLine().toUpperCase();
+
+            if (condition.equals("STABLE") ||
+                    condition.equals("QUARANTINED") ||
+                    condition.equals("CRITICAL")) {
+                break;
+            }
+
+            System.out.println("Invalid condition. Must be STABLE, QUARANTINED, or CRITICAL.");
+        }
+
+        Long habitatId;
+        while (true) {
+            System.out.print("Enter habitat ID: ");
+            String input = scanner.nextLine();
+
+            try {
+                habitatId = Long.parseLong(input);
+
+
+                if (habitatId < 1 || habitatId > 10) {
+                    System.out.println("Invalid habitat ID. Must be between 1 and 10.");
+                    continue;
+                }
+
+                break;
+
+            } catch (NumberFormatException e) {
+                System.out.println("Habitat ID must be a number.");
+            }
+        }
+
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+
+            String json = String.format(
+                    "{\"name\":\"%s\",\"species\":\"%s\",\"dangerLevel\":\"%s\",\"condition\":\"%s\",\"habitatId\":%d}",
+                    name, species, danger, condition, habitatId
+            );
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_BASE + "/creatures"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            HttpResponse<String> response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            int status = response.statusCode();
+            System.out.println("\nStatus: " + status);
+
+            if (status == 201) {
+                CreatureResponse created = parseSingle(response.body());
+                System.out.println("Creature created successfully!");
+                displaySingleCreature(created);
+
+            } else if (status == 409) {
+                System.out.println("Conflict: Creature already exists.");
+
+            } else if (status == 400) {
+                String body = response.body();
+
+                if (body != null && body.toLowerCase().contains("habitat")) {
+                    System.out.println("Invalid habitat ID. That habitat does not exist.");
+                } else {
+                    System.out.println("Invalid input. Check your data.");
+                }
+
+            } else {
+                System.out.println("Error: " + response.body());
+            }
+
+        } catch (Exception e) {
+            System.out.println("Connection error: " + e.getMessage());
+        }
     }
 
 
