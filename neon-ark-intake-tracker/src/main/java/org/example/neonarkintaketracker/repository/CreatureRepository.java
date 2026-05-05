@@ -11,7 +11,10 @@ import java.util.List;
 public interface CreatureRepository extends JpaRepository<Creature, Long> {
 
     List<Creature> findByStatusNot(String status);
+
     boolean existsByNameIgnoreCaseAndHabitatId(String name, Long habitatId);
+
+    boolean existsByNameIgnoreCaseAndHabitatIdAndIdNot(String name, Long habitatId, Long id);
 
     // No extra methods needed for basic "read" functionality
 
