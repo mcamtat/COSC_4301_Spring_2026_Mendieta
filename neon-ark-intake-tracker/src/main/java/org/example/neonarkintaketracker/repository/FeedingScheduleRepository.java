@@ -1,5 +1,6 @@
 package org.example.neonarkintaketracker.repository;
 
+import org.example.neonarkintaketracker.entity.Creature;
 import org.example.neonarkintaketracker.entity.FeedingSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,6 +17,15 @@ public interface FeedingScheduleRepository extends JpaRepository<FeedingSchedule
 """)
     List<FeedingSchedule> findByFeedTimeString(@Param("time") String time);
     List<FeedingSchedule> findByCreatureId(Long creatureId);
+
+    @Query("""
+    SELECT DISTINCT c
+    FROM FeedingSchedule f
+    JOIN f.creature c
+    JOIN FETCH c.habitat
+    WHERE FUNCTION('TO_CHAR', f.feedTime, 'HH24:MI') = :time
+""")
+    List<Creature> findCreaturesByFeedTime(@Param("time") String time);
 
     boolean existsByCreatureIdAndFeedTimeAfter(Long creatureId, LocalDateTime now);
 
