@@ -6,6 +6,17 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+
+/**
+ * Entity representing a creature.
+ *
+ * Database: creatures
+ *
+ * Notes:
+ * - Uses a many-to-one relationship with Habitat
+ * - Status is used for soft deletion (ACTIVE, REMOVED)
+ * - createdAt timestamp set at creation time
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -7,6 +7,16 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
+/**
+ * Entity representing the habitat of a creature.
+ *
+ * Database: habitats
+ *
+ * Notes:
+ * - One habitat can contain multiple creatures (one-to-many relationship)
+ * - Used as a reference for assigning creatures to environments
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

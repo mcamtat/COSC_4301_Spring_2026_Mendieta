@@ -3,6 +3,16 @@ package org.example.neonarkintaketracker.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+
+/**
+ * Entity representing a user role in the system.
+ *
+ * Database: roles
+ *
+ * Notes:
+ * - Roles are assigned to users to control access to endpoints
+ * - Defines permission levels
+ */
 @Entity
 @Table(name = "roles")
 @Data

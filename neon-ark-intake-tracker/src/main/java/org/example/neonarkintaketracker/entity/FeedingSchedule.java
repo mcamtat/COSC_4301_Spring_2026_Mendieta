@@ -6,6 +6,16 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+
+/**
+ * Entity representing the feeding schedule of a creature.
+ *
+ * Database: feeding_schedules
+ *
+ * Notes:
+ *  - Each feeding schedule is associated with a single creature
+ *  - One creature can have multiple feeding schedules
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

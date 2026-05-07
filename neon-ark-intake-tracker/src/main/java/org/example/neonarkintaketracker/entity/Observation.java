@@ -6,6 +6,16 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+
+/**
+ * Entity representing an observations recorded for a creature.
+ *
+ * Database: observations
+ *
+ * Notes:
+ * - Each observation is associated with a single creature
+ * - Multiple observations can exist for one creature
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
