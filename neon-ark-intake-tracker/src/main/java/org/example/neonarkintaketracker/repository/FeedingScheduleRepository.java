@@ -9,15 +9,23 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
+/**
+ * Repository for FeedingSchedule entities.
+ *
+ * Inherits CRUD operations from JpaRepository.
+ * Provides queries for retrieving feeding schedules and
+ * identifying creatures based on feeding times.
+ */
 public interface FeedingScheduleRepository extends JpaRepository<FeedingSchedule, Long> {
 
-    @Query("""
-    SELECT f FROM FeedingSchedule f
-    WHERE FUNCTION('TO_CHAR', f.feedTime, 'HH24:MI') = :time
-""")
-    List<FeedingSchedule> findByFeedTimeString(@Param("time") String time);
     List<FeedingSchedule> findByCreatureId(Long creatureId);
 
+
+    /**
+     * Retrieves distinct creatures that need to be fed at a given time.
+     * Includes habitat information using JOIN FETCH.
+     */
     @Query("""
     SELECT DISTINCT c
     FROM FeedingSchedule f
