@@ -46,15 +46,39 @@ public class CreatureService {
      * Return every creature currently in the database.
      * This is the "Read" operation for GET /api/creatures
      */
-    public List<Creature> getAllCreatures() {
+    public List<CreatureResponse> getAllCreatures() {
 
-        return repository.findByStatusNot("REMOVED");
+        return repository.findAllActiveWithHabitat()
+                .stream()
+                .map(c -> new CreatureResponse(
+                        c.getId(),
+                        c.getName(),
+                        c.getSpecies(),
+                        c.getDangerLevel(),
+                        c.getCondition(),
+                        c.getNotes(),
+                        c.getHabitat().getId(),
+                        c.getHabitat().getLocation(),
+                        c.getCreatedAt().toString()
+                ))
+                .toList();
     }
 
-    // NEW: Return one creature by id (Optional = may not exist)
-    public Optional<Creature> getCreatureById(Long id) {
+    public Optional<CreatureResponse> getCreatureById(Long id) {
 
-        return repository.findById(id);
+        return repository.findByIdWithHabitat(id)
+                .filter(creature -> !"REMOVED".equals(creature.getStatus()))
+                .map(creature -> new CreatureResponse(
+                        creature.getId(),
+                        creature.getName(),
+                        creature.getSpecies(),
+                        creature.getDangerLevel(),
+                        creature.getCondition(),
+                        creature.getNotes(),
+                        creature.getHabitat().getId(),
+                        creature.getHabitat().getLocation(),
+                        creature.getCreatedAt().toString()
+                ));
     }
 
     public CreatureResponse createCreature(CreatureRequest req) {
@@ -104,6 +128,7 @@ public class CreatureService {
                 saved.getCondition(),
                 saved.getNotes(),
                 saved.getHabitat().getId(),
+                saved.getHabitat().getLocation(),
                 saved.getCreatedAt().toString()
         );
     }
@@ -175,6 +200,7 @@ public class CreatureService {
         Observation obs = new Observation();
         obs.setNote(note);
         obs.setObservedAt(LocalDateTime.now());
+        obs.setAuthor("System");
         obs.setCreature(creature);
 
         return observationRepository.save(obs);
@@ -213,17 +239,26 @@ public class CreatureService {
         return feedingRepository.save(fs);
     }
 
-    public List<Creature> findCreaturesToFeed(String time) {
+    public List<CreatureResponse> findCreaturesToFeed(String time) {
 
         if (time == null || !time.matches("^\\d{2}:\\d{2}$")) {
             throw new RuntimeException("BAD_REQUEST");
         }
 
-        List<FeedingSchedule> schedules = feedingRepository.findByFeedTimeString(time);
-
-        return schedules.stream()
-                .map(FeedingSchedule::getCreature)
+        return feedingRepository.findCreaturesByFeedTime(time)
+                .stream()
                 .filter(c -> !"REMOVED".equals(c.getStatus()))
+                .map(c -> new CreatureResponse(
+                        c.getId(),
+                        c.getName(),
+                        c.getSpecies(),
+                        c.getDangerLevel(),
+                        c.getCondition(),
+                        c.getNotes(),
+                        c.getHabitat().getId(),
+                        c.getHabitat().getLocation(),
+                        c.getCreatedAt().toString()
+                ))
                 .toList();
     }
 
