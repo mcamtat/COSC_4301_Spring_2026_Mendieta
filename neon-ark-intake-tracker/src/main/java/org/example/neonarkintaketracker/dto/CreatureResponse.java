@@ -17,5 +17,6 @@ public record CreatureResponse(
     String condition,                              // Condition for display.
     String notes,                                  // Notes returned by design choice.
     Long habitatId,                                // Relationship returned as ID only.
+    String habitatName,                            // Name associated with ID
     String createdAt                               // Timestamp formatted for display.
 ) {}
