@@ -39,7 +39,7 @@ public class NeonArkCli {
      * Starts the CLI application loop.
      *
      * Displays the menu, accepts user input, and routes
-     * user choices to the appropriate handler methods.
+     * user choices to the appropriate methods.
      */
     private void start() {
 
