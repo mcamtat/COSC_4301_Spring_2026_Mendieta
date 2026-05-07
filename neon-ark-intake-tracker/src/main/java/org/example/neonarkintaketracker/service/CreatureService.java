@@ -20,10 +20,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-/*
- * Thin service for now.
- * Keeps the controller clean and gives us a place to add
- * validation, DTO mapping, and business rules later.
+/**
+ * Service layer responsible for handling business logic and
+ * acts as the mediator between repository and controller.
+ * <p>
+ * Responsibilities:
+ *   - Validate incoming data early
+ *   - Enforce business rules
+ *   - Coordinate repositories
+ *   - Map internal Entities to external DTO objects
  */
 @Service
 public class CreatureService {
@@ -42,9 +47,15 @@ public class CreatureService {
         this.feedingRepository = feedingRepository;
     }
 
-    /*
-     * Return every creature currently in the database.
-     * This is the "Read" operation for GET /api/creatures
+
+    /**
+     * Retrieves every creature marked as active as well as their habitats.
+     *
+     * Includes habitat data and filter out creatures marked as REMOVED
+     *
+     * API route: GET /api/creatures
+     *
+     * @return list of active creatures
      */
     public List<CreatureResponse> getAllCreatures() {
 
@@ -64,6 +75,18 @@ public class CreatureService {
                 .toList();
     }
 
+
+    /**
+     * Retrieves a single creature by its ID.
+     *
+     * Return a creature only if it exists and is not marked as REMOVED.
+     * Otherwise, an empty result is returned.
+     *
+     * API route: GET /api/creatures/{id}
+     *
+     * @param id The identifier of the creature
+     * @return Optional containing the creature if found and active, otherwise empty
+     */
     public Optional<CreatureResponse> getCreatureById(Long id) {
 
         return repository.findByIdWithHabitat(id)
@@ -81,6 +104,22 @@ public class CreatureService {
                 ));
     }
 
+
+    /**
+     * Creates a new creature in the system.
+     *
+     * Rules:
+     *  - Name must not be blank
+     *  - Danger level must be LOW, MEDIUM, or HIGH
+     *  - Condition must be STABLE, QUARANTINED, or CRITICAL
+     *  - Habitat must exist
+     *  - No duplicate names within the same habitat
+     *
+     * API route: POST /api/creatures
+     *
+     * @param req The request containing creature data.
+     * @return the created creature as a CreatureResponse
+     */
     public CreatureResponse createCreature(CreatureRequest req) {
 
         if (req.name() == null || req.name().trim().isEmpty()) {
@@ -95,7 +134,7 @@ public class CreatureService {
         if (habitat == null) {
             throw new RuntimeException("BAD_REQUEST");
         }
-        // 1. Map DTO -> Entity
+
         Creature creature = new Creature();
         creature.setName(req.name());
         creature.setSpecies(req.species());
@@ -116,10 +155,8 @@ public class CreatureService {
             throw new RuntimeException("BAD_REQUEST");
         }
 
-        // 2. Save entity
         Creature saved = repository.save(creature);
 
-        // 3. Map Entity -> Response DTO
         return new CreatureResponse(
                 saved.getId(),
                 saved.getName(),
@@ -134,6 +171,18 @@ public class CreatureService {
     }
 
 
+    /**
+     * Perform soft-delete on a creature by marking its status as REMOVED.
+     *
+     * Rules:
+     *  - Creature must exist
+     *  - Creature must not already be in REMOVED status
+     *  - Creatures with active feeding schedules cannot be removed
+     *
+     * API Route: DELETE /api/creatures/{id}
+     *
+     * @param id The identifier of the creature
+     */
     public void deleteCreature(Long id) {
         Creature creature = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
@@ -150,6 +199,19 @@ public class CreatureService {
         repository.save(creature);
     }
 
+
+    /**
+     * Renames an existing creature.
+     *
+     * Validates the new name and ensures it does not duplicate another creature
+     * in the same habitat.
+     *
+     * API Route: PUT /api/creatures/{id}/name
+     *
+     * @param id The identifier of the creature
+     * @param newName The new name assigned to the creature
+     * @return the updated creature after renaming
+     */
     public Creature renameCreature(Long id, String newName) {
 
         if (newName == null || newName.trim().isEmpty()) {
@@ -172,6 +234,16 @@ public class CreatureService {
         }
 
 
+    /**
+     * Retrieves all observations for a specific creature.
+     *
+     * Returns the observations only if the creature exists and is not marked as REMOVED.
+     *
+     * API Route: GET /api/creatures/{id}/observations
+     *
+     * @param creatureId The identifier of the creature
+     * @return list of observations for the specified creature
+     */
     public List<Observation> getObservations(Long creatureId) {
 
         Creature creature = repository.findById(creatureId)
@@ -184,6 +256,23 @@ public class CreatureService {
         return observationRepository.findByCreatureId(creatureId);
     }
 
+
+    /**
+     * Adds a new observation to a specific creature.
+     *
+     * Rules:
+     *   - Creature must exist
+     *   - Status is not REMOVED
+     *   - Observation text is not empty
+     *
+     * Automatically assigns timestamp and author.
+     *
+     * API Route: POST /api/creatures/{id}/observations
+     *
+     * @param creatureId the identifier of the creature
+     * @param note the observation text
+     * @return the saved observation
+     */
     public Observation addObservation(Long creatureId, String note) {
 
         Creature creature = repository.findById(creatureId)
@@ -206,6 +295,17 @@ public class CreatureService {
         return observationRepository.save(obs);
     }
 
+
+    /**
+     * Retrieves feeding schedule for a specific creature.
+     *
+     * Returns the feeding schedule only if the creature exists and is not marked as REMOVED.
+     *
+     * API Route: GET /api/creatures/{id}/feeding-schedule
+     *
+     * @param creatureId the identifier of the creature
+     * @return list of feedings for the specified creature
+     */
     public List<FeedingSchedule> getFeedingSchedule(Long creatureId) {
 
         Creature creature = repository.findById(creatureId)
@@ -218,6 +318,22 @@ public class CreatureService {
         return feedingRepository.findByCreatureId(creatureId);
     }
 
+
+    /**
+     * Adds a new feeding schedule entry for a specific creature.
+     *
+     * Rules:
+     *  - Creature must exist
+     *  - Status is not REMOVED
+     *  - Feeding time is in valid format
+     *
+     * API Route: POST /api/creatures/{id}/feeding-schedule
+     *
+     * @param creatureId the identifier of the creature
+     * @param feedTime the scheduled feeding time
+     * @param notes optional notes associated with the feeding
+     * @return the saved feeding schedule entry
+     */
     public FeedingSchedule addFeeding(Long creatureId, LocalDateTime feedTime, String notes) {
 
         Creature creature = repository.findById(creatureId)
@@ -239,6 +355,19 @@ public class CreatureService {
         return feedingRepository.save(fs);
     }
 
+
+    /**
+     * Retrieves all creatures that need to be fed at a specific time.
+     *
+     * Rules:
+     *  - Time format is valid
+     *  - Exclude creatures marked as REMOVED
+     *
+     * API Route: GET /api/feedings?time={HH:MM}
+     *
+     * @param time the feeding time in HH:MM format
+     * @return list of creatures that require feeding at the specified time (may be empty)
+     */
     public List<CreatureResponse> findCreaturesToFeed(String time) {
 
         if (time == null || !time.matches("^\\d{2}:\\d{2}$")) {
