@@ -1,12 +1,14 @@
 package org.example.neonarkintaketracker.dto;
 
-import lombok.Data;
+
 /**
  * DTO used for CREATE and UPDATE requests coming from the Java CLI client.
  *
+ * Defines the allowed structure of incoming data
+ *
  * NOTE:
- *  - We intentionally EXCLUDE id and createdAt because those are DB-managed.
- *  - This is the "allowed" shape of incoming data.
+ *  - Excludes id and createdAt because they are managed by the database
+ *  - Used only for input validation and request handling
  */
 public record CreatureRequest(
         String name,                                   // Allowed input: creature name.

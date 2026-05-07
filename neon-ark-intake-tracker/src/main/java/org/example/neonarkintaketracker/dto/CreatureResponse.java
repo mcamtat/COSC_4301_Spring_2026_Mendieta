@@ -1,12 +1,15 @@
 package org.example.neonarkintaketracker.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+
 /**
  * DTO used for READ responses going back to the Java CLI client.
  *
+ * Represents the safe, external view of a creature.
+ *
  * NOTE:
- *  - We INCLUDE id and createdAt because the server/database controls them.
- *  - This is the "allowed" shape of outgoing data.
- *  - The client can see these values, but should never be able to set them.
+ *  - Includes id and createdAt since they are server-generated
+ *  - Clients can view these values but cannot modify them
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record CreatureResponse(
