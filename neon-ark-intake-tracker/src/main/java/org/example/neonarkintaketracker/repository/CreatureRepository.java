@@ -2,9 +2,11 @@ package org.example.neonarkintaketracker.repository;
 
 import org.example.neonarkintaketracker.entity.Creature;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 // Simple CRUD + paging/sorting out of the box
 @Repository
@@ -15,6 +17,18 @@ public interface CreatureRepository extends JpaRepository<Creature, Long> {
     boolean existsByNameIgnoreCaseAndHabitatId(String name, Long habitatId);
 
     boolean existsByNameIgnoreCaseAndHabitatIdAndIdNot(String name, Long habitatId, Long id);
+
+    @Query("""
+    SELECT c 
+    FROM Creature c 
+    JOIN FETCH c.habitat 
+    WHERE c.status <> 'REMOVED'
+    ORDER BY c.id
+""")
+    List<Creature> findAllActiveWithHabitat();
+
+    @Query("SELECT c FROM Creature c JOIN FETCH c.habitat WHERE c.id = :id")
+    Optional<Creature> findByIdWithHabitat(Long id);
 
     // No extra methods needed for basic "read" functionality
 
