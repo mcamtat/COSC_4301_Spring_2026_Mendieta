@@ -25,12 +25,7 @@ public class FeedingController {
             var creatures = service.findCreaturesToFeed(time);
 
             if (creatures.isEmpty()) {
-                return ResponseEntity.ok(
-                        Map.of(
-                                "message", "none need attending",
-                                "data", creatures
-                        )
-                );
+                return ResponseEntity.ok(creatures);
             }
 
             return ResponseEntity.ok(creatures);
