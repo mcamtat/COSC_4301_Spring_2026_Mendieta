@@ -27,4 +27,7 @@ public class Observation {
     @JoinColumn(name = "creature_id", nullable = false)
     @JsonIgnore
     private Creature creature;
+
+    @Column
+    private String author;
 }
