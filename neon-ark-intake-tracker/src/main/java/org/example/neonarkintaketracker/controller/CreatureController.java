@@ -14,9 +14,11 @@ import jakarta.validation.Valid;
 
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /*
  * This controller handles incoming HTTP requests for /api/creatures
@@ -38,11 +40,9 @@ public class CreatureController {
      */
 
     @GetMapping
-    public ResponseEntity<List<Creature>> getAllCreatures() {
+    public ResponseEntity<List<CreatureResponse>> getAllCreatures() {
 
-        List<Creature> creatures = service.getAllCreatures();
-        // Return 200 OK with JSON body
-        return ResponseEntity.ok(creatures);
+        return ResponseEntity.ok(service.getAllCreatures());
     }
 
 
@@ -79,18 +79,15 @@ public class CreatureController {
     }
 
 
-    // NEW: GET /api/creatures/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<Creature> getCreatureById(@PathVariable Long id) {
+    public ResponseEntity<CreatureResponse> getCreatureById(@PathVariable Long id) {
 
-        Optional<Creature> maybeCreature = service.getCreatureById(id);
+        Optional<CreatureResponse> maybeCreature = service.getCreatureById(id);
 
         if (maybeCreature.isEmpty()) {
-            // 404 when id does not exist
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        // 200 OK when found
         return ResponseEntity.ok(maybeCreature.get());
     }
 
@@ -150,19 +147,35 @@ public class CreatureController {
 
     @GetMapping("/{id}/observations")
     public ResponseEntity<?> getObservations(@PathVariable Long id) {
-
         try {
-            List<Observation> observations = service.getObservations(id);
-            return ResponseEntity.ok(observations);
+            CreatureResponse creature = service.getCreatureById(id)
+                    .orElseThrow(() -> new RuntimeException("NOT_FOUND"));
+
+            List<Map<String, Object>> obsList = service.getObservations(id)
+                    .stream()
+                    .map(o -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("id", o.getId());
+                        m.put("note", o.getNote());
+                        m.put("author", o.getAuthor());
+                        m.put("observedAt", o.getObservedAt().toString());
+                        return m;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(Map.of(
+                    "id", creature.id(),
+                    "name", creature.name(),
+                    "habitatName", creature.habitatName(),
+                    "observations", obsList
+            ));
 
         } catch (RuntimeException e) {
-
             if ("NOT_FOUND".equals(e.getMessage())) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("Creature not found");
             }
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.internalServerError().build();
         }
     }
 
