@@ -18,17 +18,29 @@ import java.util.Scanner;
 import java.net.*;
 import java.io.*;
 
+
+/**
+ * Command-line interface (CLI) for interacting with the backend of the Neon Ark system.
+ *
+ * Provides a menu-driven interface that maps directly to backend API endpoints.
+ * Handles user input, performs HTTP requests, and displays formatted results.
+ */
 public class NeonArkCli {
 
     private final Scanner scanner = new Scanner(System.in);
     private final String API_BASE = "http://localhost:8080/api";
-
 
     public static void main(String[] args) {
         new NeonArkCli().start();
     }
 
 
+    /**
+     * Starts the CLI application loop.
+     *
+     * Displays the menu, accepts user input, and routes
+     * user choices to the appropriate handler methods.
+     */
     private void start() {
 
         boolean running = true;
@@ -74,6 +86,11 @@ public class NeonArkCli {
         }
 
 
+    /**
+     * Retrieves and displays all active creatures.
+     *
+     * API Route: GET /api/creatures
+     */
     private void listAll() {
 
         try {
@@ -105,6 +122,12 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Parses a JSON array response into a list of CreatureResponse objects.
+     *
+     * @param json raw JSON response
+     * @return list of creatures
+     */
     private List<CreatureResponse> parseJson(String json) {
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -122,6 +145,11 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Displays a formatted table of creatures.
+     *
+     * @param creatures list of creatures
+     */
     private void displayCreatureTable(List<CreatureResponse> creatures) {
 
         if (creatures.isEmpty()) {
@@ -147,6 +175,11 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Retrieves and displays a single creature by ID.
+     *
+     * API Route: GET /api/creatures/{id}
+     */
     private void viewById() {
 
         Long id = null;
@@ -195,6 +228,12 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Parses a JSON object into a CreatureResponse.
+     *
+     * @param json raw JSON response
+     * @return parsed creature
+     */
     private CreatureResponse parseSingle(String json) {
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -206,6 +245,12 @@ public class NeonArkCli {
         }
     }
 
+
+    /**
+     * Displays details for a single creature.
+     *
+     * @param creature creature to display
+     */
     private void displaySingleCreature(CreatureResponse creature) {
 
         if (creature == null) {
@@ -225,6 +270,11 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Collects user input and registers a new creature.
+     *
+     * API Route: POST /api/creatures
+     */
     private void register() {
 
         String name;
@@ -340,6 +390,11 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Renames an existing creature.
+     *
+     * API Route: PUT /api/creatures/{id}/name
+     */
     private void rename() {
 
         Long id = null;
@@ -449,6 +504,11 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Removes a creature after confirmation (soft delete).
+     *
+     * API Route: DELETE /api/creatures/{id}
+     */
     private void remove() {
 
         Long id = null;
@@ -530,6 +590,11 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Retrieves and displays observations for a creature.
+     *
+     * API Route: GET /api/creatures/{id}/observations
+     */
     private void viewObservations() {
 
         Long id = null;
@@ -610,6 +675,11 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Retrieves creatures that need feeding at a specific time (HH:MM format).
+     *
+     * API Route: GET /api/feedings?time={HH:MM}
+     */
     private void findByFeedingTime() {
 
         String time;
@@ -685,6 +755,11 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Retrieves and displays all system users (admin only).
+     *
+     * API Route: GET /api/admin/users
+     */
     private void viewUsers() {
 
         try {
@@ -749,6 +824,11 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Prompts the user to confirm exit.
+     *
+     * @return true if user confirms exit, otherwise false
+     */
     private boolean confirmExit() {
 
         while (true) {
@@ -769,6 +849,9 @@ public class NeonArkCli {
     }
 
 
+    /**
+     * Displays the main menu.
+     */
     private static void printMenu() {
         System.out.println("\n=====================================");
         System.out.println("       NEON ARK CLI SYSTEM");
