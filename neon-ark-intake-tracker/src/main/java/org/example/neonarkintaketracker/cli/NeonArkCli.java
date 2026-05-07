@@ -8,9 +8,11 @@ import java.net.URI;
 import java.util.List;
 import java.util.Arrays;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.example.neonarkintaketracker.dto.CreatureResponse;
+import org.example.neonarkintaketracker.dto.UserResponse;
 
 import java.util.Scanner;
 import java.net.*;
@@ -39,7 +41,7 @@ public class NeonArkCli {
 
             switch(choice){
                 case "1":
-                    listAll();             //  GET /api/creatures
+                    listAll();             // GET /api/creatures
                     break;
                 case "2":
                     viewById();            // GET /api/creatures/{id}
@@ -127,15 +129,16 @@ public class NeonArkCli {
             return;
         }
 
-        String format = "%-5s %-20s %-15s %-10s %-15s\n";
+        String format = "%-5s %-20s %-25s %-15s %-10s %-15s\n";
 
-        System.out.printf(format, "ID", "Name", "Species", "Danger", "Condition");
-        System.out.println("----------------------------------------------------------------");
+        System.out.printf(format, "ID", "Name", "Habitat", "Species", "Danger", "Condition");
+        System.out.println("-----------------------------------------------------------------------------------------");
 
         for (CreatureResponse creature : creatures) {
             System.out.printf(format,
                     creature.id(),
                     creature.name(),
+                    creature.habitatName(),
                     creature.species(),
                     creature.dangerLevel(),
                     creature.condition()
@@ -213,6 +216,7 @@ public class NeonArkCli {
         System.out.println("\n===== CREATURE DETAILS =====");
         System.out.println("ID: " + creature.id());
         System.out.println("Name: " + creature.name());
+        System.out.println("Habitat: " + creature.habitatName());
         System.out.println("Species: " + creature.species());
         System.out.println("Danger Level: " + creature.dangerLevel());
         System.out.println("Condition: " + creature.condition());
@@ -315,7 +319,7 @@ public class NeonArkCli {
                 displaySingleCreature(created);
 
             } else if (status == 409) {
-                System.out.println("Conflict: Creature already exists.");
+                System.out.println("Creature already exists.");
 
             } else if (status == 400) {
                 String body = response.body();
@@ -338,31 +342,430 @@ public class NeonArkCli {
 
     private void rename() {
 
+        Long id = null;
+
+        while (id == null) {
+            System.out.print("Enter creature ID to rename: ");
+            String input = scanner.nextLine();
+
+            try {
+                id = Long.parseLong(input);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a numeric ID.");
+            }
+        }
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest getReq = HttpRequest.newBuilder()
+                    .uri(URI.create(API_BASE + "/creatures/" + id))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> getRes = client.send(
+                    getReq,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            if (getRes.statusCode() == 404) {
+                System.out.println("Creature not found.");
+                return;
+            }
+
+            if (getRes.statusCode() != 200) {
+                System.out.println("Error: " + getRes.body());
+                return;
+            }
+
+            CreatureResponse current = parseSingle(getRes.body());
+            String oldName = current.name();
+
+            String newName;
+
+            while (true) {
+                System.out.print("Enter new name: ");
+                newName = scanner.nextLine();
+
+                if (oldName.equalsIgnoreCase(newName)) {
+                    System.out.println("New name is the same as current name. No changes needed.");
+                    return;
+                }
+
+                if (!newName.isBlank()){
+                    break;
+                }
+
+                System.out.println("Name cannot be blank.");
+            }
+
+            System.out.print("Confirm rename '" + oldName + "' -> '" + newName + "'? (y/n): ");
+            String confirm = scanner.nextLine();
+
+            if (!confirm.equalsIgnoreCase("y")) {
+                System.out.println("Rename cancelled.");
+                return;
+            }
+
+            String json = String.format("{\"name\":\"%s\"}", newName);
+
+            HttpRequest putReq = HttpRequest.newBuilder()
+                    .uri(URI.create(API_BASE + "/creatures/" + id + "/name"))
+                    .header("Content-Type", "application/json")
+                    .PUT(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            HttpResponse<String> putRes = client.send(
+                    putReq,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            int status = putRes.statusCode();
+            System.out.println("\nStatus: " + status);
+
+            if (status == 200) {
+                CreatureResponse updated = parseSingle(putRes.body());
+
+                System.out.println("Rename successful!");
+                System.out.println("Old name: " + oldName);
+                System.out.println("New name: " + updated.name());
+
+            } else if (status == 400) {
+                System.out.println("Invalid name. Please try again.");
+
+            } else if (status == 404) {
+                System.out.println("Creature not found.");
+
+            } else if (status == 409) {
+                System.out.println("A creature with that name already exists.");
+
+            } else {
+                System.out.println("Error: " + putRes.body());
+            }
+
+        } catch (Exception e) {
+            System.out.println("Connection error: " + e.getMessage());
+        }
     }
 
 
     private void remove() {
 
+        Long id = null;
+
+        while (id == null) {
+            System.out.print("Enter creature ID to remove: ");
+            String input = scanner.nextLine();
+
+            try {
+                id = Long.parseLong(input);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a numeric ID.");
+            }
+        }
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest getReq = HttpRequest.newBuilder()
+                    .uri(URI.create(API_BASE + "/creatures/" + id))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> getRes = client.send(
+                    getReq,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            if (getRes.statusCode() == 404) {
+                System.out.println("Creature not found.");
+                return;
+            }
+
+            if (getRes.statusCode() != 200) {
+                System.out.println("Error: " + getRes.body());
+                return;
+            }
+
+            CreatureResponse creature = parseSingle(getRes.body());
+            String name = creature.name();
+
+            System.out.print("Confirm removal of '" + name + "'? (y/n): ");
+            String confirm = scanner.nextLine();
+
+            if (!confirm.equalsIgnoreCase("y")) {
+                System.out.println("Removal cancelled.");
+                return;
+            }
+
+            HttpRequest deleteReq = HttpRequest.newBuilder()
+                    .uri(URI.create(API_BASE + "/creatures/" + id))
+                    .DELETE()
+                    .build();
+
+            HttpResponse<String> deleteRes = client.send(
+                    deleteReq,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            int status = deleteRes.statusCode();
+            System.out.println("\nStatus: " + status);
+
+            if (status == 200) {
+                System.out.println("Creature '" + name + "' removed successfully.");
+
+            } else if (status == 404) {
+                System.out.println("Creature not found.");
+
+            } else if (status == 409) {
+                System.out.println("Cannot remove creature: active feeding schedule exists.");
+
+            } else {
+                System.out.println("Error: " + deleteRes.body());
+            }
+
+        } catch (Exception e) {
+            System.out.println("Connection error: " + e.getMessage());
+        }
     }
 
 
     private void viewObservations() {
 
+        Long id = null;
+
+        while (id == null) {
+            System.out.print("Enter creature ID: ");
+            String input = scanner.nextLine();
+
+            try {
+                id = Long.parseLong(input);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a numeric ID.");
+            }
+        }
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_BASE + "/creatures/" + id + "/observations"))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            int status = response.statusCode();
+            System.out.println("\nStatus: " + status);
+
+            if (status == 404) {
+                System.out.println("Creature not found.");
+                return;
+            }
+
+            if (status != 200) {
+                System.out.println("Error: " + response.body());
+                return;
+            }
+
+            // 🔥 Parse response
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response.body());
+
+            System.out.println("\n===== CREATURE DETAILS =====");
+            System.out.println("ID: " + root.get("id").asLong());
+            System.out.println("Name: " + root.get("name").asText());
+            System.out.println("Habitat: " + root.get("habitatName").asText());
+            System.out.println("============================");
+
+
+            JsonNode observations = root.get("observations");
+
+            if (observations == null || observations.isEmpty()) {
+                System.out.println("No observations found for this creature.");
+                return;
+            }
+
+            System.out.println("\n===== OBSERVATIONS =====");
+
+            String format = "%-5s %-20s %-30s %-25s\n";
+            System.out.printf(format, "ID", "Author", "Note", "Observed At");
+            System.out.println("-------------------------------------------------------------------------------");
+
+            for (JsonNode obs : observations) {
+                System.out.printf(format,
+                        obs.get("id").asLong(),
+                        obs.get("author").asText(),
+                        obs.get("note").asText(),
+                        obs.get("observedAt").asText()
+                );
+            }
+
+        } catch (Exception e) {
+            System.out.println("Connection error: " + e.getMessage());
+        }
     }
 
 
     private void findByFeedingTime() {
 
+        String time;
+
+        // 🔹 Validate HH:MM format
+        while (true) {
+            System.out.print("Enter feeding time (HH:MM): ");
+            time = scanner.nextLine();
+
+            if (time.matches("^\\d{2}:\\d{2}$")) {
+                break;
+            }
+
+            System.out.println("Invalid format. Use HH:MM (e.g., 12:00).");
+        }
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_BASE + "/feedings?time=" + time))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            int status = response.statusCode();
+            System.out.println("\nStatus: " + status);
+
+            if (status == 400) {
+                System.out.println("Invalid time format.");
+                return;
+            }
+
+            if (status != 200) {
+                System.out.println("Error: " + response.body());
+                return;
+            }
+
+            // 🔥 Parse list
+            ObjectMapper mapper = new ObjectMapper();
+            List<CreatureResponse> creatures = Arrays.asList(
+                    mapper.readValue(response.body(), CreatureResponse[].class)
+            );
+
+            if (creatures.isEmpty()) {
+                System.out.println("No creatures need feeding at this time.");
+                return;
+            }
+
+            // 🔥 Display table
+            String format = "%-5s %-20s %-20s %-15s %-10s\n";
+
+            System.out.printf(format, "ID", "Name", "Habitat", "Species", "Danger");
+            System.out.println("--------------------------------------------------------------------------");
+
+            for (CreatureResponse c : creatures) {
+                System.out.printf(format,
+                        c.id(),
+                        c.name(),
+                        c.habitatName(),
+                        c.species(),
+                        c.dangerLevel()
+                );
+            }
+
+        } catch (Exception e) {
+            System.out.println("Connection error: " + e.getMessage());
+        }
     }
 
 
     private void viewUsers() {
 
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_BASE + "/admin/users"))
+                    .header("role", "ADMIN")         // Change to staff to test validation
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            int status = response.statusCode();
+            System.out.println("\nStatus: " + status);
+
+            if (status == 401) {
+                System.out.println("Unauthorized: you must be logged in.");
+                return;
+            }
+
+            if (status == 403) {
+                System.out.println("Access denied: admin privileges required.");
+                return;
+            }
+
+            if (status != 200) {
+                System.out.println("Error: " + response.body());
+                return;
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            List<UserResponse> users = Arrays.asList(
+                    mapper.readValue(response.body(), UserResponse[].class)
+            );
+
+            if (users.isEmpty()) {
+                System.out.println("No users found.");
+                return;
+            }
+
+            String format = "%-20s %-25s %-15s %-10s\n";
+
+            System.out.printf(format, "Full Name", "Email", "Phone", "Role");
+            System.out.println("--------------------------------------------------------------------------");
+
+            for (UserResponse user : users) {
+                System.out.printf(format,
+                        user.fullName(),
+                        user.email(),
+                        user.phone(),
+                        user.role()
+                );
+            }
+
+        } catch (Exception e) {
+            System.out.println("Connection error: " + e.getMessage());
+        }
     }
 
 
     private boolean confirmExit() {
-        return true;
+
+        while (true) {
+            System.out.print("Are you sure you want to exit? (y/n): ");
+            String input = scanner.nextLine().trim().toLowerCase();
+
+            if (input.equals("y")) {
+                System.out.println("Exiting system... Goodbye!");
+                return true;
+            }
+
+            if (input.equals("n")) {
+                return false;
+            }
+
+            System.out.println("Invalid input. Please enter 'y' or 'n'.");
+        }
     }
 
 
