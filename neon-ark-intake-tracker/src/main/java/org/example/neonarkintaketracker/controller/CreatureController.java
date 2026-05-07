@@ -20,8 +20,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/*
- * This controller handles incoming HTTP requests for /api/creatures
+/**
+ * Controller responsible for creature-related API endpoints.
+ *
+ * Handles CRUD operations, observations, and feeding schedules.
  */
 @RestController
 @RequestMapping("/api/creatures")
@@ -34,11 +36,14 @@ public class CreatureController {
         this.service = service;
     }
 
-    /*
-     * Map HTTP GET requests at /api/creatures to this method
-     * Example: GET http://localhost:8080/api/creatures
-     */
 
+    /**
+     * Retrieves all active creatures in the system.
+     *
+     * API Route: GET /api/creatures
+     *
+     * @return list of active creatures
+     */
     @GetMapping
     public ResponseEntity<List<CreatureResponse>> getAllCreatures() {
 
@@ -46,6 +51,17 @@ public class CreatureController {
     }
 
 
+    /**
+     * Renames an existing creature.
+     *
+     * Validates input and ensures no duplicate names exist within the same habitat.
+     *
+     * API Route: PUT /api/creatures/{id}/name
+     *
+     * @param id the creature ID
+     * @param request the new name
+     * @return updated creature or error response
+     */
     @PutMapping("/{id}/name")
     public ResponseEntity<?> renameCreature(
             @PathVariable Long id,
@@ -79,6 +95,14 @@ public class CreatureController {
     }
 
 
+    /**
+     * Retrieves a single creature by its ID.
+     *
+     * API Route: GET /api/creatures/{id}
+     *
+     * @param id the creature ID
+     * @return creature if found, otherwise error response
+     */
     @GetMapping("/{id}")
     public ResponseEntity<CreatureResponse> getCreatureById(@PathVariable Long id) {
 
@@ -92,6 +116,16 @@ public class CreatureController {
     }
 
 
+    /**
+     * Creates a new creature.
+     *
+     * Validates input and enforces business rules.
+     *
+     * API Route: POST /api/creatures
+     *
+     * @param req user input containing creature data
+     * @return created creature or error response
+     */
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreatureRequest req) {
         try {
@@ -119,6 +153,16 @@ public class CreatureController {
     }
 
 
+    /**
+     * Removes a creature by performing a soft delete.
+     *
+     * Sets the creature status to REMOVED if found and does not have a feeding schedule..
+     *
+     * API Route: DELETE /api/creatures/{id}
+     *
+     * @param id the creature ID
+     * @return success or error response
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCreature(@PathVariable Long id) {
 
@@ -145,6 +189,15 @@ public class CreatureController {
         }
     }
 
+
+    /**
+     * Retrieves all observations for a specific creature.
+     *
+     * API Route: GET /api/creatures/{id}/observations
+     *
+     * @param id the creature ID
+     * @return creature details with new observations
+     */
     @GetMapping("/{id}/observations")
     public ResponseEntity<?> getObservations(@PathVariable Long id) {
         try {
@@ -179,6 +232,16 @@ public class CreatureController {
         }
     }
 
+
+    /**
+     * Adds a new observation to a creature.
+     *
+     * API Route: POST /api/creatures/{id}/observations
+     *
+     * @param id the creature ID
+     * @param body user input containing observation note
+     * @return created observation or error response
+     */
     @PostMapping("/{id}/observations")
     public ResponseEntity<?> addObservation(
             @PathVariable Long id,
@@ -205,6 +268,15 @@ public class CreatureController {
         }
     }
 
+
+    /**
+     * Retrieves the feeding schedule for a specific creature.
+     *
+     * API Route: GET /api/creatures/{id}/feeding-schedule
+     *
+     * @param id the creature ID
+     * @return list of feeding schedules
+     */
     @GetMapping("/{id}/feeding-schedule")
     public ResponseEntity<?> getFeedingSchedule(@PathVariable Long id) {
 
@@ -222,6 +294,16 @@ public class CreatureController {
         }
     }
 
+
+    /**
+     * Adds a feeding schedule entry for a creature.
+     *
+     * API Route: POST /api/creatures/{id}/feeding-schedule
+     *
+     * @param id the creature ID
+     * @param body user input containing feed time and notes
+     * @return created feeding schedule or error response
+     */
     @PostMapping("/{id}/feeding-schedule")
     public ResponseEntity<?> addFeeding(
             @PathVariable Long id,
