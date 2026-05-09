@@ -43,3 +43,13 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+tasks.register('runCli', JavaExec) {
+    group = 'application'
+    description = 'Runs the Neon Ark CLI Client'
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.example.neonarkintaketracker.cli.NeonArkCli'
+
+    standardInput = System.in
+}
